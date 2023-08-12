@@ -41,14 +41,14 @@ int main(void)
 
 	// Vector sum on host (for performance comparision)
 	{
-		SCOPED_TIMER("vecAddBlock CPU");
+		SCOPED_TIMER("vecAdd (Host)");
 		for (int i = 0; i < NUM_DATA; i++)
 			hc[i] = a[i] + b[i];
 	}
 
 	// Memory allocation on the device-side
 	{
-		SCOPED_TIMER("cudaMalooc&Memcpy");
+		SCOPED_TIMER("cudaMalloc & cudaMemcpy Host -> Device");
 		cudaMalloc(&da, memSize); cudaMemset(da, 0, memSize);
 		cudaMalloc(&db, memSize); cudaMemset(db, 0, memSize);
 		cudaMalloc(&dc, memSize); cudaMemset(dc, 0, memSize);
@@ -60,13 +60,13 @@ int main(void)
 
 	// Kernel call
 	{
-		SCOPED_TIMER("vecAddBlock kernel call");
+		SCOPED_TIMER("vecAddBlock (Device)");
 		vecAddBlock <<< ceil((float)NUM_DATA / 1024), 1024 >> > (da, db, dc, NUM_DATA);
 		cudaDeviceSynchronize();
 	}
 
 	{
-		SCOPED_TIMER("cudaMemcpy&cudaFree");
+		SCOPED_TIMER("cudaMemcpy Device -> Host & cudaFree");
 
 		// Copy results : Device -> Host
 		cudaMemcpy(c, dc, memSize, cudaMemcpyDeviceToHost);

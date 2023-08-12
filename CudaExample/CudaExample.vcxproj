@@ -79,7 +79,6 @@
   <ItemGroup>
     <CudaCompile Include="example_memory.cu" />
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="main.cu" />
     <CudaCompile Include="vector_addition.cu" />
     <CudaCompile Include="vector_addition_with_block.cu" />
   </ItemGroup>
