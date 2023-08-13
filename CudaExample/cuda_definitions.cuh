@@ -24,3 +24,18 @@
 #define GRID_1D_TID (BID_X * NUM_THREAD_IN_BLOCK) + TID_IN_BLOCK
 #define GRID_2D_TID (BID_Y * (Gdim_X * NUM_THREAD_IN_BLOCK) + GRID_1D_TID)
 #define GLOBAL_TID (BID_Z * (Gdim_Y * Gdim_X * NUM_THREAD_IN_BLOCK) + GRID_2D_TID)
+
+
+#ifndef SAFE_DELETE
+#define	SAFE_DELETE(p) {if(p!=NULL) delete p; p=NULL;}
+#endif
+
+template<class T>
+void allocNinitMem(T** p, long long size, double* memUsage = NULL) {
+	*p = new T[size];
+	memset(*p, 0, sizeof(T) * size);
+
+	if (memUsage != NULL) {
+		*memUsage += sizeof(T) * size;
+	}
+}

@@ -15,11 +15,13 @@ private:
 
 public:
 	static Timer& getInstance() {
-		if (!instance) {
-			instance = new Timer();
+		static Timer instance;
+		return instance;
+		if (!Timer::instance) {
+			Timer::instance = new Timer();
 		}
 		
-		return *instance;
+		return *Timer::instance;
 	}
 
 	void addRecord(string name, double time) {
@@ -37,7 +39,6 @@ public:
 	vector<string> names;
 	vector<double> counters;
 };
-Timer* Timer::instance = nullptr;
 
 #define SCOPED_TIMER(Name) ScopedTimer t1 = ScopedTimer(Name);
 

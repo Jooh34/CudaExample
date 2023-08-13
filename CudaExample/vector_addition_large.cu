@@ -1,6 +1,4 @@
-﻿#pragma once
-
-#include "vector_addition_large.cuh"
+﻿#include "vector_addition_large.cuh"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
