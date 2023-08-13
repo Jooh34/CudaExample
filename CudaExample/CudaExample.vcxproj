@@ -79,13 +79,17 @@
   <ItemGroup>
     <CudaCompile Include="example_memory.cu" />
     <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="main.cu" />
     <CudaCompile Include="vector_addition.cu" />
-    <CudaCompile Include="vector_addition_with_block.cu" />
+    <CudaCompile Include="vector_addition_large.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cuda_definitions.cuh" />
     <ClInclude Include="example_memory.cuh" />
     <ClInclude Include="kernel.cuh" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="vector_addition.cuh" />
+    <ClInclude Include="vector_addition_large.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __Timer__
+#define __Timer__
 
 #include <vector>
 #include <string>
@@ -10,11 +11,15 @@ using namespace chrono;
 class Timer
 {
 private:
-	static Timer instance;
+	static Timer* instance;
 
 public:
 	static Timer& getInstance() {
-		return instance;
+		if (!instance) {
+			instance = new Timer();
+		}
+		
+		return *instance;
 	}
 
 	void addRecord(string name, double time) {
@@ -32,8 +37,7 @@ public:
 	vector<string> names;
 	vector<double> counters;
 };
-
-Timer Timer::instance;
+Timer* Timer::instance = nullptr;
 
 #define SCOPED_TIMER(Name) ScopedTimer t1 = ScopedTimer(Name);
 
@@ -56,3 +60,5 @@ public:
 		Timer::getInstance().addRecord(name, sec.count() * 1000);
 	}
 };
+
+#endif // __Timer__

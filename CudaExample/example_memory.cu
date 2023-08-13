@@ -1,7 +1,4 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include <stdio.h>
+#include "example_memory.cuh"
 
 void checkDeviceMemory(void)
 {

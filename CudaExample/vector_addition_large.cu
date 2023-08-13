@@ -1,4 +1,7 @@
-﻿#include "cuda_runtime.h"
+﻿#pragma once
+
+#include "vector_addition_large.cuh"
+#include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
@@ -7,11 +10,8 @@
 
 #include "timer.h"
 
-// The size of the vector
-#define NUM_DATA 102490000
-
 // Simple vector sum kernel (Max vector size : 1024)
-__global__ void vecAddBlock(int* _a, int* _b, int* _c, int _size) {
+__global__ void vecAddLarge(int* _a, int* _b, int* _c, int _size) {
 	int tID = threadIdx.x;
 	int bID = blockIdx.x;
 	int ID = tID + bID * 1024;
@@ -19,7 +19,7 @@ __global__ void vecAddBlock(int* _a, int* _b, int* _c, int _size) {
 		_c[ID] = _a[ID] + _b[ID];
 }
 
-int main(void)
+int mainVectorAdditionLarge(void)
 {
 	int* a, * b, * c, * hc;	// Vectors on the host
 	int* da, * db, * dc;	// Vectors on the device
@@ -61,7 +61,7 @@ int main(void)
 	// Kernel call
 	{
 		SCOPED_TIMER("vecAddBlock (Device)");
-		vecAddBlock <<< ceil((float)NUM_DATA / 1024), 1024 >> > (da, db, dc, NUM_DATA);
+		vecAddLarge <<< ceil((float)NUM_DATA / 1024), 1024 >> > (da, db, dc, NUM_DATA);
 		cudaDeviceSynchronize();
 	}
 
