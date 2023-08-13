@@ -1,3 +1,5 @@
+#pragma once
+
 // Block ID
 #define	BID_X	blockIdx.x
 #define	BID_Y	blockIdx.y

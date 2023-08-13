@@ -3,6 +3,7 @@
 #include "vector_addition.cuh"
 #include "vector_addition_large.cuh"
 #include "matrix_addition_large.cuh"
+#include "matrix_mul.cuh"
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -30,7 +31,7 @@ void deviceQuery() {
         printf("\tThe number of CUDA cores: %d\n"
             , _ConvertSMVer2Cores(devProp.major, devProp.minor)
             * devProp.multiProcessorCount);
-        printf("\tGlobal memory size: %.2f MB"
+        printf("\tGlobal memory size: %.2f MB\n"
             , (float)devProp.totalGlobalMem / _1MB);
     }
 }
@@ -38,6 +39,6 @@ void deviceQuery() {
 int main()
 {
     deviceQuery();
-	//mainMatrixAdditionLarge();
+	mainMatmul(BlockType::B2D_G2D);
 	return 0;
 }
