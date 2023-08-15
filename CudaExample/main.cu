@@ -4,6 +4,7 @@
 #include "vector_addition_large.cuh"
 #include "matrix_addition_large.cuh"
 #include "matrix_mul.cuh"
+#include "matrix_mul_shared.cuh"
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -39,6 +40,7 @@ void deviceQuery() {
 int main()
 {
     deviceQuery();
-	mainMatmul(BlockType::B2D_G2D);
+	//mainMatmulShared(false);
+	mainMatmulShared(true);
 	return 0;
 }

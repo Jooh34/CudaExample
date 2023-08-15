@@ -13,15 +13,12 @@
 #include "cuda_definitions.cuh"
 
 #define DO_CPU
-#define DATA_TYPE int
 
 enum BlockType {
 	B1D_G2D,
 	B2D_G2D,
 };
 
-__global__ void MatMul(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K);
 int mainMatmul(BlockType blockType);
-bool compareMatrix(DATA_TYPE* _A, DATA_TYPE* _B, int _size);
 
 #endif // __MATMUL__

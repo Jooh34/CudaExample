@@ -41,3 +41,22 @@ void allocNinitMem(T** p, long long size, double* memUsage = NULL) {
 		*memUsage += sizeof(T) * size;
 	}
 }
+
+// Utility functions
+template <class T>
+bool compareMatrix(T* _A, T* _B, int _size)
+{
+	bool isMatched = true;
+	for (int i = 0; i < _size; i++) {
+		if (_A[i] != _B[i]) {
+			printf("[%d] not matched! (%d, %d)\n", i, _A[i], _B[i]);
+			isMatched = false;
+		}
+	}
+	if (isMatched)
+		printf("Results are matched!\n");
+	else
+		printf("Results are not matched!!!!!!!!!!!\n");
+
+	return isMatched;
+}

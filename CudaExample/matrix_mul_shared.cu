@@ -1,37 +1,58 @@
-#include "matrix_mul.cuh"
+#include "matrix_mul_shared.cuh"
 
 // Matrix size
-#define SIZE_M (512*2)
-#define SIZE_N (512*4)
-#define SIZE_K (512*2)
+#define SIZE_M (32)
+#define SIZE_N (32)
+#define SIZE_K (32*4)
 
 #define DATA_TYPE int
 
-__global__ void MatMulB1D_G2D(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K)
+__global__ void MatmulWoShared(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K)
 {
-	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
-	unsigned int col = blockIdx.y;
+	unsigned int col = threadIdx.y;
+	unsigned int row = threadIdx.x;
 
-	if (row < M) {
-		for (int k = 0; k < K; k++) {
-			matC[row * N + col] += (matA[row * K + k] * matB[k * N + col]);
-		}
-	}
-}
-
-__global__ void MatMulB2D_G2D(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K)
-{
-	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
-	unsigned int col = blockDim.y * blockIdx.y + threadIdx.y;
-
+	DATA_TYPE result = 0;
 	if (row < M && col < N) {
 		for (int k = 0; k < K; k++) {
-			matC[row * N + col] += (matA[row * K + k] * matB[k * N + col]);
+			result += (matA[row * K + k] * matB[k * N + col]);
 		}
 	}
+	matC[row * N + col] = result;
 }
 
-int mainMatmul(BlockType blockType)
+__global__ void MatmulShared(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K)
+{
+	unsigned int col = threadIdx.y;
+	unsigned int row = threadIdx.x;
+	
+	__shared__ float sA[SIZE_M][SIZE_K]; // 32*128*4 bytes = 16KB
+	__shared__ float sB[SIZE_K][SIZE_N]; // 32*128*4 bytes = 16KB
+
+	if (row == 0) {
+		for (int k = 0; k < K; k++) {
+			sB[k][col] = matB[col + k * N];
+		}
+	}
+
+	if (col == 0 ) {
+		for (int k = 0; k < K; k++) {
+			sA[row][k] = matA[k + row * K];
+		}
+	}
+
+	__syncthreads();
+
+	DATA_TYPE result = 0;
+	if (row < M && col < N) {
+		for (int k = 0; k < K; k++) {
+			result += (sA[row][k] * sB[k][col]);
+		}
+	}
+	matC[row * N + col] = result;
+}
+
+int mainMatmulShared(bool bUseSharedMemory)
 {
 	// set matrix size
 	int m, n, k;
@@ -93,41 +114,30 @@ int mainMatmul(BlockType blockType)
 
 
 	// 3. Set the thread layout
-	switch (blockType)
+	if (bUseSharedMemory)
 	{
-	case BlockType::B1D_G2D:
+		dim3 blockDim(32, 32, 1);
+		dim3 gridDim(1, 1, 1);
+
+		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
+		{
+			SCOPED_TIMER("MatmulShared on GPU");
+			MatmulShared << < gridDim, blockDim >> > (dA, dB, dC, m, n, k);
+			cudaDeviceSynchronize(); // this is synchronization for mearusing the kernel processing time
+		}
+	}
+	else
 	{
-		dim3 blockDim(8, 1, 1);
-		dim3 gridDim(ceil(float(m) / blockDim.x), n, 1);
+		dim3 blockDim(32, 32, 1);
+		dim3 gridDim(1, 1, 1);
 
 		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
 
 		{
-			SCOPED_TIMER("Matmul on GPU (B1D_G2D)");
-			MatMulB1D_G2D << < gridDim, blockDim >> > (dA, dB, dC, m, n, k);
+			SCOPED_TIMER("MatmulWoShared on GPU");
+			MatmulWoShared << < gridDim, blockDim >> > (dA, dB, dC, m, n, k);
 			cudaDeviceSynchronize(); // this is synchronization for mearusing the kernel processing time
 		}
-		break;
-	}
-
-	case BlockType::B2D_G2D:
-	{
-		int blockSize = 4;
-		dim3 blockDim(blockSize, blockSize, 1);
-		dim3 gridDim(ceil(float(m) / blockDim.x), ceil(float(n) / blockDim.y), 1);
-
-		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
-
-		// 4. Kernel call
-		{
-			SCOPED_TIMER("Matmul on GPU");
-			MatMulB2D_G2D << < gridDim, blockDim >> > (dA, dB, dC, m, n, k);
-			cudaDeviceSynchronize(); // this is synchronization for mearusing the kernel processing time
-		}
-	}
-
-	default:
-		break;
 	}
 
 	//5. Get(copy) the result from GPU to host memory (dC -> Cgpu)
