@@ -5,6 +5,7 @@
 #include "matrix_addition_large.cuh"
 #include "matrix_mul.cuh"
 #include "matrix_mul_shared.cuh"
+#include "matrix_mul_large_shared.cuh"
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -41,6 +42,6 @@ int main()
 {
     deviceQuery();
 	//mainMatmulShared(false);
-	mainMatmulShared(true);
+    mainMatmulLargeShared();
 	return 0;
 }

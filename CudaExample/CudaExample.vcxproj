@@ -83,6 +83,7 @@
     <CudaCompile Include="matrix_addition_large.cu" />
     <CudaCompile Include="matrix_mul.cu" />
     <CudaCompile Include="matrix_mul.cuh" />
+    <CudaCompile Include="matrix_mul_large_shared.cu" />
     <CudaCompile Include="matrix_mul_shared.cu" />
     <CudaCompile Include="vector_addition.cu" />
     <CudaCompile Include="vector_addition_large.cu" />
@@ -94,6 +95,7 @@
     <ClInclude Include="helper_string.h" />
     <ClInclude Include="kernel.cuh" />
     <ClInclude Include="matrix_addition_large.cuh" />
+    <ClInclude Include="matrix_mul_large_shared.cuh" />
     <ClInclude Include="matrix_mul_shared.cuh" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="vector_addition.cuh" />
