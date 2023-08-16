@@ -49,6 +49,44 @@ __global__ void MatMulLarge(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, i
 	}
 
 	matC[row * N + col] = result;
+
+}
+__global__ void MatMulLargeSharedMemoryInitializeParallel(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK, int ceilKdivY, int ceilKdivX)
+{
+	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
+	unsigned int col = blockDim.y * blockIdx.y + threadIdx.y;
+
+	__shared__ DATA_TYPE sA[BLOCK_X][BLOCK_K];
+	__shared__ DATA_TYPE sB[BLOCK_K][BLOCK_Y];
+
+	DATA_TYPE result = 0;
+	for (int k_grid = 0; k_grid < gridnumK; k_grid++) {
+		// shared memory sA initialization
+		for (int ky_grid=0; ky_grid < ceilKdivY; ky_grid++) {
+			int k = ky_grid * blockDim.y + threadIdx.y;
+			int k_index = k_grid * BLOCK_K + k;
+			if (k_index < K) {
+				sA[threadIdx.x][k] = matA[k_index + row * K];
+			}
+		}
+
+		// shared memory sB initialization
+		for (int kx_grid = 0; kx_grid < ceilKdivX; kx_grid++) {
+			int k = kx_grid * blockDim.x + threadIdx.x;
+			int k_index = k_grid * BLOCK_K + k;
+			if (k_index < K) {
+				sB[k][threadIdx.y] = matB[col + k_index * N];
+			}
+		}
+
+		__syncthreads();
+
+		for (int k = 0; k < BLOCK_K; k++) {
+			result += (sA[threadIdx.x][k] * sB[k][threadIdx.y]);
+		}
+	}
+
+	matC[row * N + col] = result;
 }
 
 int mainMatmulLargeShared()
@@ -117,13 +155,15 @@ int mainMatmulLargeShared()
 		dim3 blockDim(BLOCK_X, BLOCK_Y, 1);
 		dim3 gridDim(ceil(float(m) / blockDim.x), ceil(float(n) / blockDim.y), 1);
 		int gridnumK = ceilf((float)k / BLOCK_K);
+		int ceilKbyY = ceilf((float)BLOCK_K / BLOCK_Y);
+		int ceilKdivX = ceilf((float)BLOCK_K / BLOCK_X);
 
 		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
 
 		// 4. Kernel call
 		{
 			SCOPED_TIMER("Matmul on GPU");
-			MatMulLarge << < gridDim, blockDim >> > (dA, dB, dC, m, n, k, gridnumK);
+			MatMulLargeSharedMemoryInitializeParallel << < gridDim, blockDim >> > (dA, dB, dC, m, n, k, gridnumK, ceilKbyY, ceilKdivX);
 			cudaDeviceSynchronize(); // this is synchronization for mearusing the kernel processing time
 		}
 	}
