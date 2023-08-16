@@ -7,8 +7,8 @@
 
 #define DATA_TYPE int
 
-#define BLOCK_X 8
-#define BLOCK_Y 8
+#define BLOCK_X 16
+#define BLOCK_Y 16
 #define BLOCK_K 16
 
 __global__ void MatMulLarge(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK)
@@ -46,6 +46,8 @@ __global__ void MatMulLarge(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, i
 		for (int k = 0; k < BLOCK_K; k++) {
 			result += (sA[threadIdx.x][k] * sB[k][threadIdx.y]);
 		}
+
+		__syncthreads();
 	}
 
 	matC[row * N + col] = result;
@@ -84,6 +86,8 @@ __global__ void MatMulLargeSharedMemoryInitializeParallel(DATA_TYPE* matA, DATA_
 		for (int k = 0; k < BLOCK_K; k++) {
 			result += (sA[threadIdx.x][k] * sB[k][threadIdx.y]);
 		}
+
+		__syncthreads();
 	}
 
 	matC[row * N + col] = result;

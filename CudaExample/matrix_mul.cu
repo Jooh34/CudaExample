@@ -12,11 +12,13 @@ __global__ void MatMulB1D_G2D(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC,
 	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
 	unsigned int col = blockIdx.y;
 
+	DATA_TYPE result = 0;
 	if (row < M) {
 		for (int k = 0; k < K; k++) {
-			matC[row * N + col] += (matA[row * K + k] * matB[k * N + col]);
+			result += (matA[row * K + k] * matB[k * N + col]);
 		}
 	}
+	matC[row * N + col] = result;
 }
 
 __global__ void MatMulB2D_G2D(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K)
@@ -24,11 +26,13 @@ __global__ void MatMulB2D_G2D(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC,
 	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
 	unsigned int col = blockDim.y * blockIdx.y + threadIdx.y;
 
+	DATA_TYPE result = 0;
 	if (row < M && col < N) {
 		for (int k = 0; k < K; k++) {
-			matC[row * N + col] += (matA[row * K + k] * matB[k * N + col]);
+			result += (matA[row * K + k] * matB[k * N + col]);
 		}
 	}
+	matC[row * N + col] = result;
 }
 
 int mainMatmul(BlockType blockType)
@@ -112,7 +116,7 @@ int mainMatmul(BlockType blockType)
 
 	case BlockType::B2D_G2D:
 	{
-		int blockSize = 4;
+		int blockSize = 8;
 		dim3 blockDim(blockSize, blockSize, 1);
 		dim3 gridDim(ceil(float(m) / blockDim.x), ceil(float(n) / blockDim.y), 1);
 

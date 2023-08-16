@@ -41,6 +41,7 @@ void deviceQuery() {
 int main()
 {
     deviceQuery();
+    //mainMatmul(BlockType::B2D_G2D);
 	//mainMatmulShared(false);
     mainMatmulLargeShared();
 	return 0;
