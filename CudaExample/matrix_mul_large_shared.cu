@@ -9,51 +9,42 @@
 
 #define BLOCK_X 8
 #define BLOCK_Y 8
-#define BLOCK_K 8
+#define BLOCK_K 16
 
 __global__ void MatMulLarge(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK)
 {
 	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
 	unsigned int col = blockDim.y * blockIdx.y + threadIdx.y;
 
-	__shared__ DATA_TYPE sA[BLOCK_Y][BLOCK_K];
-	__shared__ DATA_TYPE sB[BLOCK_K][BLOCK_X];
-	//__shared__ DATA_TYPE sC[BLOCK_Y][BLOCK_X]; // shared memory for save 
-
-	/*for (int x = 0; x < BLOCK_X; x++) {
-		for (int y = 0; y < BLOCK_Y; y++) {
-			sC[y][x] = 0;
-		}
-	}*/
+	__shared__ DATA_TYPE sA[BLOCK_X][BLOCK_K];
+	__shared__ DATA_TYPE sB[BLOCK_K][BLOCK_Y];
 
 	DATA_TYPE result = 0;
-	for (int k_gridcol = 0; k_gridcol < gridnumK; k_gridcol++) {
-		for (int k_gridrow = 0; k_gridrow < gridnumK; k_gridrow++) {
-			// shared memory sB initialization
-			if (threadIdx.x == 0) {
-				for (int k = 0; k < BLOCK_K; k++) {
-					int k_index = k_gridrow * BLOCK_K + k;
-					if (k_index < K) {
-						sB[k][threadIdx.y] = matB[col + k_index * N];
-					}
-				}
-			}
-
-			// shared memory sA initialization
-			if (threadIdx.y == 0) {
-				for (int k = 0; k < BLOCK_K; k++) {
-					int k_index = k_gridcol * BLOCK_K + k;
-					if (k_index < K) {
-						sA[threadIdx.x][k] = matA[k_index + row * K];
-					}
-				}
-			}
-
-			__syncthreads();
-
+	for (int k_grid = 0; k_grid < gridnumK; k_grid++) {
+		// shared memory sA initialization
+		if (threadIdx.y == 0) {
 			for (int k = 0; k < BLOCK_K; k++) {
-				result += (sA[threadIdx.x][k] * sB[k][threadIdx.y]);
+				int k_index = k_grid * BLOCK_K + k;
+				if (k_index < K) {
+					sA[threadIdx.x][k] = matA[k_index + row * K];
+				}
 			}
+		}
+
+		// shared memory sB initialization
+		if (threadIdx.x == 0) {
+			for (int k = 0; k < BLOCK_K; k++) {
+				int k_index = k_grid * BLOCK_K + k;
+				if (k_index < K) {
+					sB[k][threadIdx.y] = matB[col + k_index * N];
+				}
+			}
+		}
+
+		__syncthreads();
+
+		for (int k = 0; k < BLOCK_K; k++) {
+			result += (sA[threadIdx.x][k] * sB[k][threadIdx.y]);
 		}
 	}
 
