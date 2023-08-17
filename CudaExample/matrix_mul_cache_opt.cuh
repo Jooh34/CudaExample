@@ -1,5 +1,5 @@
-#ifndef __MATMUL_SHARED_LARGE_SHARED__
-#define __MATMUL_SHARED_LARGE_SHARED__
+#ifndef __MATMUL_SHARED_CACHE_OPT__
+#define __MATMUL_SHARED_CACHE_OPT__
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -18,6 +18,6 @@
 #endif
 #include <device_functions.h>
 
-int mainMatmulLargeShared();
+int mainMatmulCacheOpt(bool bYRow);
 
-#endif // __MATMUL_SHARED_LARGE_SHARED__
+#endif // __MATMUL_SHARED_CACHE_OPT__

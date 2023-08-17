@@ -35,7 +35,11 @@ public:
 		for (int i = 0; i < size; i++) {
 			printf("%s - %lf ms\n", names[i].c_str(), counters[i]);
 		}
+
+		names.clear();
+		counters.clear();
 	}
+
 	vector<string> names;
 	vector<double> counters;
 };

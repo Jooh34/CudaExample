@@ -55,7 +55,11 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Optimization>Od</Optimization>
     </CudaCompile>
+    <CudaLink>
+      <Optimization>Od</Optimization>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -83,6 +87,7 @@
     <CudaCompile Include="matrix_addition_large.cu" />
     <CudaCompile Include="matrix_mul.cu" />
     <CudaCompile Include="matrix_mul.cuh" />
+    <CudaCompile Include="matrix_mul_cache_opt.cu" />
     <CudaCompile Include="matrix_mul_large_shared.cu" />
     <CudaCompile Include="matrix_mul_shared.cu" />
     <CudaCompile Include="vector_addition.cu" />
@@ -95,6 +100,7 @@
     <ClInclude Include="helper_string.h" />
     <ClInclude Include="kernel.cuh" />
     <ClInclude Include="matrix_addition_large.cuh" />
+    <ClInclude Include="matrix_mul_cache_opt.cuh" />
     <ClInclude Include="matrix_mul_large_shared.cuh" />
     <ClInclude Include="matrix_mul_shared.cuh" />
     <ClInclude Include="timer.h" />
