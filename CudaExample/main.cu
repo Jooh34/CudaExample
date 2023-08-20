@@ -6,7 +6,7 @@
 #include "matrix_mul.cuh"
 #include "matrix_mul_shared.cuh"
 #include "matrix_mul_large_shared.cuh"
-#include "matrix_mul_cache_opt.cuh"
+#include "matrix_mul_memacc_opt.cuh"
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -45,6 +45,6 @@ int main()
     //mainMatmul(BlockType::B2D_G2D);
 	//mainMatmulShared(false);
     //mainMatmulLargeShared();
-    mainMatmulCacheOpt(true);
+    mainMatmulMemaccOpt(true);
 	return 0;
 }

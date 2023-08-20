@@ -1,5 +1,5 @@
-#ifndef __MATMUL_SHARED_CACHE_OPT__
-#define __MATMUL_SHARED_CACHE_OPT__
+#ifndef __MATMUL_SHARED_MEMACC_OPT__
+#define __MATMUL_SHARED_MEMACC_OPT__
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -18,6 +18,6 @@
 #endif
 #include <device_functions.h>
 
-int mainMatmulCacheOpt(bool bYRow);
+int mainMatmulMemaccOpt(bool bYRow);
 
-#endif // __MATMUL_SHARED_CACHE_OPT__
+#endif // __MATMUL_SHARED_MEMACC_OPT__

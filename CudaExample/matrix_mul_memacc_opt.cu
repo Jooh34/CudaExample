@@ -38,7 +38,7 @@ __global__ void MatMul_yRow(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, i
 	matC[row * N + col] = result;
 }
 
-int mainMatmulCacheOpt(bool bYRow)
+int mainMatmulMemaccOpt(bool bYRow)
 {
 	// set matrix size
 	int m, n, k;
