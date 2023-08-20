@@ -18,6 +18,6 @@
 #endif
 #include <device_functions.h>
 
-int mainMatmulLargeShared();
+int mainMatmulLargeShared(bool bOptBankConflict, bool YRow);
 
 #endif // __MATMUL_SHARED_LARGE_SHARED__

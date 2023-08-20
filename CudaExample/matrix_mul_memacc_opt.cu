@@ -7,8 +7,8 @@
 
 #define DATA_TYPE int
 
-#define BLOCK_X 16
-#define BLOCK_Y 16
+#define BLOCK_X 4
+#define BLOCK_Y 4
 
 __global__ void MatMul_xRow(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K)
 {

@@ -7,9 +7,9 @@
 
 #define DATA_TYPE int
 
-#define BLOCK_X 16
-#define BLOCK_Y 16
-#define BLOCK_K 16
+#define BLOCK_X 32
+#define BLOCK_Y 32
+#define BLOCK_K 32
 
 __global__ void MatMulLarge(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK)
 {
@@ -51,8 +51,8 @@ __global__ void MatMulLarge(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, i
 	}
 
 	matC[row * N + col] = result;
-
 }
+
 __global__ void MatMulLargeSharedMemoryInitializeParallel(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK, int ceilKdivY, int ceilKdivX)
 {
 	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
@@ -93,7 +93,87 @@ __global__ void MatMulLargeSharedMemoryInitializeParallel(DATA_TYPE* matA, DATA_
 	matC[row * N + col] = result;
 }
 
-int mainMatmulLargeShared()
+__global__ void MatMulLargeSharedOptBankConflict(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK, int ceilKdivY, int ceilKdivX)
+{
+	unsigned int row = blockDim.x * blockIdx.x + threadIdx.x;
+	unsigned int col = blockDim.y * blockIdx.y + threadIdx.y;
+
+	__shared__ DATA_TYPE sA[BLOCK_X][BLOCK_K];
+	__shared__ DATA_TYPE sB[BLOCK_K][BLOCK_Y];
+
+	DATA_TYPE result = 0;
+	for (int k_grid = 0; k_grid < gridnumK; k_grid++) {
+		// shared memory sA initialization (transpose!)
+		for (int ky_grid = 0; ky_grid < ceilKdivY; ky_grid++) {
+			int k = ky_grid * blockDim.y + threadIdx.y;
+			int k_index = k_grid * BLOCK_K + k;
+			if (k_index < K) {
+				sA[k][threadIdx.x] = matA[k_index + row * K];
+			}
+		}
+
+		// shared memory sB initialization (transpose!)
+		for (int kx_grid = 0; kx_grid < ceilKdivX; kx_grid++) {
+			int k = kx_grid * blockDim.x + threadIdx.x;
+			int k_index = k_grid * BLOCK_K + k;
+			if (k_index < K) {
+				sB[threadIdx.y][k] = matB[col + k_index * N];
+			}
+		}
+
+		__syncthreads();
+
+		for (int k = 0; k < BLOCK_K; k++) {
+			result += (sA[k][threadIdx.x] * sB[threadIdx.y][k]);
+		}
+
+		__syncthreads();
+	}
+
+	matC[row * N + col] = result;
+}
+
+__global__ void MatMulLargeSharedYRow(DATA_TYPE* matA, DATA_TYPE* matB, DATA_TYPE* matC, int M, int N, int K, int gridnumK, int ceilKdivY, int ceilKdivX)
+{
+	unsigned int col = blockDim.x * blockIdx.x + threadIdx.x;
+	unsigned int row = blockDim.y * blockIdx.y + threadIdx.y;
+
+	__shared__ DATA_TYPE sA[BLOCK_X][BLOCK_K];
+	__shared__ DATA_TYPE sB[BLOCK_K][BLOCK_Y];
+
+	DATA_TYPE result = 0;
+	for (int k_grid = 0; k_grid < gridnumK; k_grid++) {
+		// shared memory sA initialization
+		for (int kx_grid = 0; kx_grid < ceilKdivX; kx_grid++) {
+			int k = kx_grid * blockDim.x + threadIdx.x;
+			int k_index = k_grid * BLOCK_K + k;
+			if (k_index < K) {
+				sA[threadIdx.y][k] = matA[k_index + row * K];
+			}
+		}
+
+		// shared memory sB initialization
+		for (int ky_grid = 0; ky_grid < ceilKdivY; ky_grid++) {
+			int k = ky_grid * blockDim.y + threadIdx.y;
+			int k_index = k_grid * BLOCK_K + k;
+			if (k_index < K) {
+				sB[k][threadIdx.x] = matB[col + k_index * N];
+			}
+		}
+
+		__syncthreads();
+
+		for (int k = 0; k < BLOCK_K; k++) {
+			result += (sA[threadIdx.y][k] * sB[k][threadIdx.x]);
+		}
+
+		__syncthreads();
+	}
+
+	matC[row * N + col] = result;
+}
+
+int mainMatmulLargeShared(bool bOptBankConflict, bool YRow)
 {
 	// set matrix size
 	int m, n, k;
@@ -155,6 +235,40 @@ int mainMatmulLargeShared()
 
 
 	// 3. Set the thread layout
+	if (bOptBankConflict && !YRow)
+	{
+		dim3 blockDim(BLOCK_X, BLOCK_Y, 1);
+		dim3 gridDim(ceil(float(m) / blockDim.x), ceil(float(n) / blockDim.y), 1);
+		int gridnumK = ceilf((float)k / BLOCK_K);
+		int ceilKbyY = ceilf((float)BLOCK_K / BLOCK_Y);
+		int ceilKdivX = ceilf((float)BLOCK_K / BLOCK_X);
+
+		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
+
+		// 4. Kernel call
+		{
+			SCOPED_TIMER("Matmul on GPU with OptBankConflict");
+			MatMulLargeSharedOptBankConflict << < gridDim, blockDim >> > (dA, dB, dC, m, n, k, gridnumK, ceilKbyY, ceilKdivX);
+			cudaDeviceSynchronize(); // this is synchronization for mearusing the kernel processing time
+		}
+	}
+	else if (bOptBankConflict && YRow)
+	{
+		dim3 blockDim(BLOCK_X, BLOCK_Y, 1);
+		dim3 gridDim(ceil(float(n) / blockDim.x), ceil(float(m) / blockDim.y), 1);
+		int gridnumK = ceilf((float)k / BLOCK_K);
+		int ceilKbyY = ceilf((float)BLOCK_K / BLOCK_Y);
+		int ceilKdivX = ceilf((float)BLOCK_K / BLOCK_X);
+
+		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
+
+		// 4. Kernel call
+		{
+			SCOPED_TIMER("Matmul on GPU with shared & yRow");
+			MatMulLargeSharedYRow << < gridDim, blockDim >> > (dA, dB, dC, m, n, k, gridnumK, ceilKbyY, ceilKdivX);
+		}
+	}
+	else if (!bOptBankConflict && !YRow)
 	{
 		dim3 blockDim(BLOCK_X, BLOCK_Y, 1);
 		dim3 gridDim(ceil(float(m) / blockDim.x), ceil(float(n) / blockDim.y), 1);

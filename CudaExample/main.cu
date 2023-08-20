@@ -44,7 +44,7 @@ int main()
     deviceQuery();
     //mainMatmul(BlockType::B2D_G2D);
 	//mainMatmulShared(false);
-    //mainMatmulLargeShared();
-    mainMatmulMemaccOpt(true);
+    mainMatmulLargeShared(true, true);
+    //mainMatmulMemaccOpt(true);
 	return 0;
 }

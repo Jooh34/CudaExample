@@ -101,7 +101,7 @@ int mainMatmul(BlockType blockType)
 	{
 	case BlockType::B1D_G2D:
 	{
-		dim3 blockDim(8, 1, 1);
+		dim3 blockDim(64, 1, 1);
 		dim3 gridDim(ceil(float(m) / blockDim.x), n, 1);
 
 		printf("Grid(%d, %d), Block(%d, %d)\n", gridDim.x, gridDim.y, blockDim.x, blockDim.y);
@@ -116,7 +116,7 @@ int mainMatmul(BlockType blockType)
 
 	case BlockType::B2D_G2D:
 	{
-		int blockSize = 8;
+		int blockSize = 32;
 		dim3 blockDim(blockSize, blockSize, 1);
 		dim3 gridDim(ceil(float(m) / blockDim.x), ceil(float(n) / blockDim.y), 1);
 
